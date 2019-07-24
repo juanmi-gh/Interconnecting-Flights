@@ -2,8 +2,11 @@ package com.ryanair.jmcr.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,12 +20,21 @@ public class InterconnectionsController {
 
 
 	@GetMapping("/interconnections")
-	public List<Flight> findFlights() {
+	public ResponseEntity<Object> findFlights() {
 		
-		return mockFlights();
-	}
+		try {
+			return new ResponseEntity<>(mockFlights(), HttpStatus.OK);
+			
+		} catch (Exception e) {
+			return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}	
 	
-	private List<Flight> mockFlights() {
+	private List<Flight> mockFlights() throws Exception {
+		
+		if (new Random().nextBoolean()) {
+			throw new Exception("Time to fail!");
+		}
 		
 		List<Flight> result = new ArrayList<>();
 		
