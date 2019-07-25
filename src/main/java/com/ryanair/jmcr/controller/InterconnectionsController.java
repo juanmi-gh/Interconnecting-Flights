@@ -2,26 +2,41 @@ package com.ryanair.jmcr.controller;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ryanair.jmcr.controller.dto.Flight;
 import com.ryanair.jmcr.controller.dto.FlightSearch;
-import com.ryanair.jmcr.controller.dto.Leg;
+import com.ryanair.jmcr.model.Route;
+import com.ryanair.jmcr.service.RoutesConsumer;
+import com.ryanair.jmcr.service.RoutesService;
+import com.ryanair.jmcr.service.SchedulesConsumer;
+import com.ryanair.jmcr.service.SchedulesService;
+import com.ryanair.jmcr.service.dto.RouteAPI;
+import com.ryanair.jmcr.service.dto.ScheduleAPI;
 
 @RestController
-@RequestMapping(value = "seeker", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping("seeker")
 public class InterconnectionsController {
 
+	@Autowired
+	RoutesConsumer routesConsumer;
+	
+	@Autowired
+	RoutesService routesService;
+	
+	@Autowired
+	SchedulesConsumer schedulesConsumer;
+	
+	@Autowired
+	SchedulesService schedulesService;
 
-	@GetMapping("/interconnections")
+	@GetMapping(value = "/interconnections")
 	public ResponseEntity<Object> findFlights(
 			@RequestParam(value="departure") String departure,
 			@RequestParam(value="arrival") String arrival,
@@ -30,38 +45,25 @@ public class InterconnectionsController {
 		
 		try {
 			FlightSearch search = new FlightSearch(departure, arrival, departureDateTime, arrivalDateTime);
-			List<Flight> result = mockFlights(search);
 			
-			return new ResponseEntity<>(result, HttpStatus.OK);
+			/**
+			 * 1. Collect Routes
+			 * 2. Map-Reduce Routes
+			 * 3. Collect Schedules
+			 * 4. Map-Reduce Schedules
+			 */
+			List<RouteAPI> apiRoutes = routesConsumer.collect();
+			List<Route> routes = routesService.filter(apiRoutes);
+			List<ScheduleAPI> apiSchedules = schedulesConsumer.collectByRoutes(routes);
+			// TODO
+			
+			return new ResponseEntity<>(null, HttpStatus.OK);
 			
 		} catch (Exception e) {
 			return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 	
-	private List<Flight> mockFlights(FlightSearch search) throws Exception {
-		
-		if (new Random().nextBoolean()) {
-			throw new Exception("Time to fail!");
-		}
-		
-		List<Flight> result = new ArrayList<>();
-		
-		Leg leg = new Leg(search.getDeparture(), search.getArrival(), "2018-03-01T12:40", "2018-03-01T16:40");
-		List<Leg> legs = new ArrayList<>();
-		legs.add(leg);
-		Flight flight = new Flight(legs.size() - 1, legs);
-		result.add(flight);
-		
-		legs = new ArrayList<>();
-		leg = new Leg(search.getDeparture(), "STN", "2018-03-01T06:25", "2018-03-01T07:35");
-		legs.add(leg);
-		leg = new Leg("STN", search.getArrival(), "2018-03-01T09:50", "2018-03-01T13:20");
-		legs.add(leg);
-		
-		flight = new Flight(legs.size() - 1, legs);
-		result.add(flight);
-		
-		return result;
-	}
+
+
 }
