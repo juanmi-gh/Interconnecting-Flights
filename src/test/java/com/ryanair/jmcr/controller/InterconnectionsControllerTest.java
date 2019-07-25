@@ -22,7 +22,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import com.ryanair.jmcr.controller.dto.Flight;
 import com.ryanair.jmcr.controller.dto.FlightSearch;
 import com.ryanair.jmcr.controller.dto.Leg;
-import com.ryanair.jmcr.service.RoutesConsumer;
+import com.ryanair.jmcr.service.Consumer;
+import com.ryanair.jmcr.service.routes.dto.RouteAPI;
 
 import lombok.extern.java.Log;
 
@@ -38,7 +39,7 @@ public class InterconnectionsControllerTest {
 	private InterconnectionsController controller;
 	
 	@Mock
-	RoutesConsumer routesConsumer;
+	Consumer<RouteAPI> routesConsumer;
 	
 	private MockMvc mockMvc;
 	private RequestBuilder request;
