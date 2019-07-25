@@ -12,29 +12,26 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ryanair.jmcr.controller.dto.FlightSearch;
-import com.ryanair.jmcr.model.Route;
-import com.ryanair.jmcr.service.RoutesConsumer;
-import com.ryanair.jmcr.service.RoutesService;
-import com.ryanair.jmcr.service.SchedulesConsumer;
-import com.ryanair.jmcr.service.SchedulesService;
-import com.ryanair.jmcr.service.dto.RouteAPI;
-import com.ryanair.jmcr.service.dto.ScheduleAPI;
+import com.ryanair.jmcr.service.Consumer;
+import com.ryanair.jmcr.service.routes.dto.RouteAPI; 
+
 
 @RestController
 @RequestMapping("seeker")
+@lombok.extern.java.Log
 public class InterconnectionsController {
 
 	@Autowired
-	RoutesConsumer routesConsumer;
+	Consumer<RouteAPI> routesConsumer;
 	
-	@Autowired
-	RoutesService routesService;
-	
-	@Autowired
-	SchedulesConsumer schedulesConsumer;
-	
-	@Autowired
-	SchedulesService schedulesService;
+//	@Autowired
+//	RoutesService routesService;
+//	
+//	@Autowired
+//	SchedulesConsumer schedulesConsumer;
+//	
+//	@Autowired
+//	SchedulesService schedulesService;
 
 	@GetMapping(value = "/interconnections")
 	public ResponseEntity<Object> findFlights(
@@ -53,13 +50,14 @@ public class InterconnectionsController {
 			 * 4. Map-Reduce Schedules
 			 */
 			List<RouteAPI> apiRoutes = routesConsumer.collect();
-			List<Route> routes = routesService.filter(apiRoutes);
-			List<ScheduleAPI> apiSchedules = schedulesConsumer.collectByRoutes(routes);
+//			List<Route> routes = routesService.filter(apiRoutes, search);
+//			List<ScheduleAPI> apiSchedules = schedulesConsumer.collectByRoutes(routes);
 			// TODO
 			
-			return new ResponseEntity<>(null, HttpStatus.OK);
+			return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
 			
 		} catch (Exception e) {
+			log.info(e.getMessage());
 			return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
