@@ -7,6 +7,6 @@ import lombok.Data;
 @Data
 public class ScheduleAPI {
 
-	private final Integer month;
-	private final List<ScheduleDayAPI> days;
+	private Integer month;
+	private List<ScheduleDayAPI> days;
 }

@@ -1,4 +1,4 @@
-package com.ryanair.jmcr.service.dto;
+package com.ryanair.jmcr.service.routes.dto;
 
 import java.io.Serializable;
 
@@ -12,9 +12,9 @@ public class RouteAPI implements Serializable {
 	
 	private static final long serialVersionUID = -2303113209118358371L;
 
-	private final String airportFrom;
-	private final String airportTo;
-	private final String connectingAirport;
-	private final String operator;
+	private String airportFrom;
+	private String airportTo;
+	private String connectingAirport;
+	private String operator;
 
 }

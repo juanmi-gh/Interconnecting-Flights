@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class ScheduleFlightAPI {
 
-	private final String number;
-	private final String departureTime;
-	private final String arrivalTime;
+	private String number;
+	private String departureTime;
+	private String arrivalTime;
 }
