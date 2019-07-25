@@ -2,6 +2,7 @@ package com.ryanair.jmcr.service.routes;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -14,15 +15,16 @@ import com.ryanair.jmcr.service.routes.dto.RouteAPI;
 
 @Service
 public class RoutesConsumer implements Consumer<RouteAPI>{
+
+	@Autowired
+	private RestTemplate restTemplate;
 	
     @Value("${api.routes}")
     private String routesPath;
 	
-	
 	@Override
 	public List<RouteAPI> collect() {
 
-		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<List<RouteAPI>> response = restTemplate.exchange(
 				routesPath,
 				HttpMethod.GET,
