@@ -1,4 +1,4 @@
-package com.ryanair.jmcr.service.routes;
+package com.ryanair.jmcr.service.routes.impl;
 
 import java.util.List;
 
@@ -10,11 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import com.ryanair.jmcr.service.Consumer;
+import com.ryanair.jmcr.service.routes.IRoutesConsumer;
 import com.ryanair.jmcr.service.routes.dto.RouteAPI;
 
 @Service
-public class RoutesConsumer implements Consumer<RouteAPI>{
+public class RoutesConsumer implements IRoutesConsumer{
 
 	@Autowired
 	private RestTemplate restTemplate;
