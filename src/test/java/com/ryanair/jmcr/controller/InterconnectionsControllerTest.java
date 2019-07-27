@@ -19,11 +19,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import com.ryanair.jmcr.controller.dto.Flight;
-import com.ryanair.jmcr.controller.dto.FlightSearch;
-import com.ryanair.jmcr.controller.dto.Leg;
-import com.ryanair.jmcr.service.Consumer;
-import com.ryanair.jmcr.service.routes.dto.RouteAPI;
+import com.ryanair.jmcr.service.dto.Flight;
+import com.ryanair.jmcr.service.dto.Leg;
+import com.ryanair.jmcr.service.routes.IRoutesConsumer;
+import com.ryanair.jmcr.service.routes.dto.RouteSearch;
 
 import lombok.extern.java.Log;
 
@@ -39,7 +38,7 @@ public class InterconnectionsControllerTest {
 	private InterconnectionsController controller;
 	
 	@Mock
-	Consumer<RouteAPI> routesConsumer;
+	IRoutesConsumer routesConsumer;
 	
 	private MockMvc mockMvc;
 	private RequestBuilder request;
@@ -60,7 +59,7 @@ public class InterconnectionsControllerTest {
 	}
 
 	// FIXME
-	private List<Flight> mockFlights(FlightSearch search) throws Exception {
+	private List<Flight> mockFlights(RouteSearch search) throws Exception {
 		
 		if (new Random().nextBoolean()) {
 			throw new Exception("Time to fail!");
