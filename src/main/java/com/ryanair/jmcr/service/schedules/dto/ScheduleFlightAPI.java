@@ -1,4 +1,4 @@
-package com.ryanair.jmcr.service.dto;
+package com.ryanair.jmcr.service.schedules.dto;
 
 import lombok.Data;
 
