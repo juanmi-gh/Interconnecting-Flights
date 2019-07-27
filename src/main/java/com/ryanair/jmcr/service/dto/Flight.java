@@ -1,4 +1,4 @@
-package com.ryanair.jmcr.controller.dto;
+package com.ryanair.jmcr.service.dto;
 
 import java.io.Serializable;
 import java.util.List;
