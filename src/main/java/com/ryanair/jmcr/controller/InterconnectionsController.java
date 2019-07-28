@@ -57,7 +57,7 @@ public class InterconnectionsController {
 			return new ResponseEntity<>(resultFlights, HttpStatus.OK);
 
 		} catch (Exception e) {
-			log.info(e.getMessage());
+			log.warning(e.getMessage());
 			return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -83,4 +83,5 @@ public class InterconnectionsController {
 		
 		return resultFlights;
 	}
+	
 }
