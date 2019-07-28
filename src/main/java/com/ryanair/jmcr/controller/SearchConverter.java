@@ -1,8 +1,5 @@
 package com.ryanair.jmcr.controller;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Service;
 
 import com.ryanair.jmcr.controller.dto.FlightSearch;
@@ -19,14 +16,6 @@ public class SearchConverter implements Converter<RouteSearch, FlightSearch> {
 			.departure(item.getDeparture())
 			.arrival(item.getArrival())
 			.build();
-	}
-
-	@Override
-	public List<RouteSearch> convert(List<FlightSearch> list) {
-
-		return list.parallelStream()
-				.map(this::convert)
-				.collect(Collectors.toList());
 	}
 
 }
