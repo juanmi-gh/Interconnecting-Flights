@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ryanair.jmcr.controller.dto.FlightSearch;
+import com.ryanair.jmcr.model.Schedule;
 import com.ryanair.jmcr.service.Converter;
 import com.ryanair.jmcr.service.dto.Flight;
 import com.ryanair.jmcr.service.routes.IRoutesConsumer;
@@ -19,8 +20,7 @@ import com.ryanair.jmcr.service.routes.IRoutesService;
 import com.ryanair.jmcr.service.routes.dto.RouteAPI;
 import com.ryanair.jmcr.service.routes.dto.RouteSearch;
 import com.ryanair.jmcr.service.schedules.ISchedulesConsumer;
-import com.ryanair.jmcr.service.schedules.ISchedulesService;
-import com.ryanair.jmcr.service.schedules.dto.ScheduleAPI; 
+import com.ryanair.jmcr.service.schedules.ISchedulesService; 
 
 @RestController
 @RequestMapping("seeker")
@@ -64,24 +64,28 @@ public class InterconnectionsController {
 	
 	private List<String> findInterconnectedLocations(FlightSearch flightSearch) {
 	
-		RouteSearch routeSearch = searchConverter.convert(flightSearch);
 		List<RouteAPI> apiRoutes = routesConsumer.collect();
+		RouteSearch routeSearch = searchConverter.convert(flightSearch);
 		return routesService.findStopLocations(apiRoutes, routeSearch);
 	}
 
 	private List<Flight> findFlighs(FlightSearch flightSearch, List<String> stopLocations) {
 		
-		List<Flight> resultFlights = new ArrayList<>();
+		List<Schedule> routeSchedules = schedulesConsumer.findDirectFlights(flightSearch);
+		List<Flight> validSchedules = schedulesService.filterSchedules(flightSearch, routeSchedules);
+//		List<Flight> flights = schedulesService.convert(flightSearch, validSchedules);
+    	
 		
-		for (String stop : stopLocations) {
-			List<ScheduleAPI> firstLegSchedules = schedulesConsumer.findFirstLeg(flightSearch, stop);
-			List<ScheduleAPI> secondLegSchedules = schedulesConsumer.findSecondLeg(flightSearch, stop);
-			
-			List<Flight> flights = schedulesService.matchConnections(firstLegSchedules, secondLegSchedules);
-			resultFlights.addAll(flights);
-		}
+// TODO One stop flight
+//		for (String stop : stopLocations) {
+//			List<ScheduleAPI> firstLegSchedules = schedulesConsumer.findFirstLeg(flightSearch, stop);
+//			List<ScheduleAPI> secondLegSchedules = schedulesConsumer.findSecondLeg(flightSearch, stop);
+//			
+//			List<Flight> flights = schedulesService.matchConnections(firstLegSchedules, secondLegSchedules);
+//			resultFlights.addAll(flights);
+//		}
 		
-		return resultFlights;
+		return validSchedules;
 	}
 	
 }
