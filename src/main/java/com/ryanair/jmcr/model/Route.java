@@ -1,13 +1,15 @@
 package com.ryanair.jmcr.model;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class Route {
 
-	private final String departureAirport;
-	private final String arrivalAirport;
-	private final String departureDateTime;
-	private final String arrivalDateTime;
+	private String departureAirport;
+	private String arrivalAirport;
+	private String departureDateTime;
+	private String arrivalDateTime;
 	
 }
