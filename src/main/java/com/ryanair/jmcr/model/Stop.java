@@ -8,7 +8,8 @@ import lombok.Builder.Default;
 @Builder
 public class Stop {
 
-	private String airport;
+	@Default
+	private String airport = "";
 	
 	@Default
 	private Boolean isDeparture = Boolean.FALSE;	
