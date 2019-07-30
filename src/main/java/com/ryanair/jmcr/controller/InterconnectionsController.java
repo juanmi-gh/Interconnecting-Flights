@@ -24,7 +24,8 @@ import com.ryanair.jmcr.service.routes.dto.RouteSearch;
 import com.ryanair.jmcr.service.schedules.ISchedulesConsumer;
 import com.ryanair.jmcr.service.schedules.ISchedulesService;
 import com.ryanair.jmcr.service.schedules.dto.ScheduleAPI;
-import com.ryanair.jmcr.service.schedules.dto.ScheduleSearch; 
+import com.ryanair.jmcr.service.schedules.dto.ScheduleSearch;
+import com.ryanair.jmcr.utils.ValidationException; 
 
 @RestController
 @RequestMapping("seeker")
@@ -73,33 +74,32 @@ public class InterconnectionsController {
 		return routesService.findStopLocations(apiRoutes, routeSearch);
 	}
 
-	private List<Flight> findFlighs(FlightSearch flightSearch, List<String> stopLocations) {
+	private List<Flight> findFlighs(FlightSearch flightSearch, List<String> stopLocations) throws ValidationException {
 
+		// Direct flights
 		List<ScheduleSearch> schedulesSearch = buildSchedulesSearch(flightSearch);
 		List<ScheduleAPI> routeSchedules = schedulesConsumer.findSchedules(schedulesSearch);
-		List<Schedule> schedules = schedulesService.convert(schedulesSearch, routeSchedules);		
-		return schedulesService.filterSchedules(flightSearch, schedules);		
-	}
+		List<Schedule> schedules = schedulesService.convert(schedulesSearch, routeSchedules);
+		List<Schedule> validSchedules =  schedulesService.filterSchedules(flightSearch, schedules);
+		List<Flight> flights =  schedulesService.buildFlights(flightSearch, validSchedules);
 		
-/**
- * 		for(String stopLocation : stopLocations) {
- *		FlightSearch leg1Search = new FlightSearch(flightSearch.getDeparture(), stopLocation, flightSearch.getDepartureDateTime(), flightSearch.getArrivalDateTime());
- *		List<Schedule> leg1Schedules = schedulesConsumer.findSchedules(leg1Search);
- *		
- *		FlightSearch leg2Search = new FlightSearch(stopLocation, flightSearch.getArrival(), flightSearch.getDepartureDateTime(), flightSearch.getArrivalDateTime());
- *		List<Schedule> leg2Schedules = schedulesConsumer.findSchedules(leg1Search);
- *		
- *		for(Schedule leg1Schedule : leg1Schedules) {
- *			for(Schedule leg2Schedule : leg1Schedules) {
- *				if (leg1Schedule match leg2Schedule) {
- *					validSchedule.add(buildFlight());
- *					break;
- *				}
- *			}
- *		}		
- *
- *		}
- **/		
+		// Interconnected flights
+		for(String stopLocation : stopLocations) {
+			FlightSearch leg1 = new FlightSearch(
+									flightSearch.getDeparture(),
+									stopLocation,
+									flightSearch.getDepartureDateTime(),
+									flightSearch.getArrivalDateTime());
+			
+			List<ScheduleSearch> leg1SchedulesSearch = buildSchedulesSearch(leg1);
+			List<ScheduleAPI> leg1RouteSchedules = schedulesConsumer.findSchedules(leg1SchedulesSearch);
+			List<Schedule> leg1Schedules = schedulesService.convert(leg1SchedulesSearch, leg1RouteSchedules);
+			
+		}
+		
+		return flights;
+	}
+
 
 	private List<ScheduleSearch> buildSchedulesSearch(FlightSearch flightSearch) {
 

@@ -10,7 +10,11 @@ import com.ryanair.jmcr.service.schedules.dto.ScheduleSearch;
 
 public interface ISchedulesService {
 
-	List<Flight> filterSchedules(FlightSearch flightSearch, List<Schedule> routeSchedules);
+	List<Flight> buildFlights(FlightSearch flightSearch, List<Schedule> schedules);
+	
+	List<Schedule> filterSchedules(FlightSearch flightSearch, List<Schedule> routeSchedules);
 
 	List<Schedule> convert(List<ScheduleSearch> schedulesSearch, List<ScheduleAPI> schedulesAPI);
+
+
 }

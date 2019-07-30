@@ -25,40 +25,19 @@ import com.ryanair.jmcr.service.schedules.dto.ScheduleSearch;
 public class SchedulesService implements ISchedulesService {
 
 	@Override
-	public List<Flight> filterSchedules(FlightSearch flightSearch, List<Schedule> dailySchedules) {
-
-		List<Flight> result = new ArrayList<>();
-
-		List<Schedule> filteredSchedules = filterSchedulesByDate(flightSearch, dailySchedules);
-				
-		LocalTime departureTime = flightSearch.getDepartureDateTime().toLocalTime();
-		LocalTime arrivalTime = flightSearch.getArrivalDateTime().toLocalTime();
+	public List<Flight> buildFlights(FlightSearch flightSearch, List<Schedule> schedules) {
 		
-		for(Schedule day : filteredSchedules) {
+		List<Flight> result = new ArrayList<>();
+		
+		for(Schedule day : schedules) {
 			for(FlightInfo info : day.getFlights()) {
-
-				if (info.getDepartureTime().isBefore(departureTime) ||
-					info.getArrivalTime().isAfter(arrivalTime)) {
-					continue;
-				}
-
+				
 				Flight flight = buildFlight(flightSearch, day.getDate(), info);
-				result.add(flight);
+				result.add(flight);				
 			}
 		}
-
-		return result;
-	}
-
-	private List<Schedule> filterSchedulesByDate(FlightSearch flightSearch, List<Schedule> dailySchedules) {
 		
-		LocalDate departureDate = flightSearch.getDepartureDateTime().toLocalDate();
-		LocalDate arrivalDate = flightSearch.getArrivalDateTime().toLocalDate();
-
-		return dailySchedules.stream()
-				. filter(day -> (departureDate.isBefore(day.getDate()) || departureDate.equals(day.getDate()))
-							&& (arrivalDate.isAfter(day.getDate()) || arrivalDate.equals(day.getDate())))
-				.collect(Collectors.toList());
+		return result;
 	}
 	
 	private Flight buildFlight(FlightSearch flightSearch, LocalDate date, FlightInfo info) {
@@ -78,7 +57,53 @@ public class SchedulesService implements ISchedulesService {
 					.legs(List.of(leg))
 					.build();
 	}
+	
+	@Override
+	public List<Schedule> filterSchedules(FlightSearch flightSearch, List<Schedule> dailySchedules) {
 
+		List<Schedule> result2 = new ArrayList<>();
+
+		List<Schedule> filteredSchedules = filterSchedulesByDate(flightSearch, dailySchedules);
+				
+		LocalTime departureTime = flightSearch.getDepartureDateTime().toLocalTime();
+		LocalTime arrivalTime = flightSearch.getArrivalDateTime().toLocalTime();
+		
+		for(Schedule day : filteredSchedules) {
+			
+			List<FlightInfo> flightsTime = new ArrayList<>(); 
+			for(FlightInfo info : day.getFlights()) {
+				
+				if (info.getDepartureTime().isBefore(departureTime) ||
+					info.getArrivalTime().isAfter(arrivalTime)) {
+					continue;
+				}
+				
+				flightsTime.add(info);
+			}
+			
+			if (!flightsTime.isEmpty()) {
+				Schedule validSchedule = Schedule.builder()
+                            						.date(day.getDate())
+                            						.flights(flightsTime)
+                            						.build();
+				result2.add(validSchedule);
+			}
+		}
+
+		return result2;
+	}
+
+	private List<Schedule> filterSchedulesByDate(FlightSearch flightSearch, List<Schedule> dailySchedules) {
+		
+		LocalDate departureDate = flightSearch.getDepartureDateTime().toLocalDate();
+		LocalDate arrivalDate = flightSearch.getArrivalDateTime().toLocalDate();
+
+		return dailySchedules.stream()
+				. filter(day -> (departureDate.isBefore(day.getDate()) || departureDate.equals(day.getDate()))
+							&& (arrivalDate.isAfter(day.getDate()) || arrivalDate.equals(day.getDate())))
+				.collect(Collectors.toList());
+	}
+	
 	@Override
 	public List<Schedule> convert(List<ScheduleSearch> schedulesSearch, List<ScheduleAPI> schedulesAPI) {
 
