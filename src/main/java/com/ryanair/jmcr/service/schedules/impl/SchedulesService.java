@@ -79,7 +79,6 @@ public class SchedulesService implements ISchedulesService {
 					.build();
 	}
 
-
 	@Override
 	public List<Schedule> convert(List<ScheduleSearch> schedulesSearch, List<ScheduleAPI> schedulesAPI) {
 

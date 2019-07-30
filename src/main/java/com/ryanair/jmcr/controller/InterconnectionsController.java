@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ryanair.jmcr.controller.dto.FlightSearch;
-import com.ryanair.jmcr.model.FlightInfo;
 import com.ryanair.jmcr.model.Schedule;
 import com.ryanair.jmcr.service.Converter;
 import com.ryanair.jmcr.service.dto.Flight;
@@ -137,22 +136,4 @@ public class InterconnectionsController {
 		return result;
 	}
 	
-	private List<FlightInfo> extractFlightsInfo(ScheduleDayAPI day) {
-		
-		List<FlightInfo> flights = new ArrayList<>();
-		
-		for(ScheduleFlightAPI flight : day.getFlights()) {
-			
-			LocalTime departure = LocalTime.parse(flight.getDepartureTime(), DateTimeFormatter.ISO_LOCAL_TIME);
-			LocalTime arrival = LocalTime.parse(flight.getArrivalTime(), DateTimeFormatter.ISO_LOCAL_TIME);
-			
-			FlightInfo item = FlightInfo.builder()
-										.departureTime(departure)
-										.arrivalTime(arrival)
-										.build();
-			flights.add(item);
-		}
-		
-		return flights;
-	}
 }
