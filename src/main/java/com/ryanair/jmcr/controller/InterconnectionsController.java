@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,10 +15,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ryanair.jmcr.controller.dto.FailResponse;
 import com.ryanair.jmcr.controller.dto.FlightSearch;
 import com.ryanair.jmcr.model.Schedule;
 import com.ryanair.jmcr.service.Converter;
+import com.ryanair.jmcr.service.IFlightService;
 import com.ryanair.jmcr.service.dto.Flight;
+import com.ryanair.jmcr.service.dto.Leg;
 import com.ryanair.jmcr.service.routes.IRoutesConsumer;
 import com.ryanair.jmcr.service.routes.IRoutesService;
 import com.ryanair.jmcr.service.routes.dto.RouteAPI;
@@ -29,9 +34,10 @@ import com.ryanair.jmcr.utils.ValidationException;
 
 @RestController
 @RequestMapping("seeker")
-@lombok.extern.java.Log
 public class InterconnectionsController {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger("CONTROLLER");
+	
 	@Autowired
 	Converter<RouteSearch, FlightSearch> searchConverter;
 
@@ -47,6 +53,9 @@ public class InterconnectionsController {
 	@Autowired
 	ISchedulesService schedulesService;
 
+	@Autowired
+	IFlightService flightsService;
+	
 	@GetMapping(value = "/interconnections")
 	public ResponseEntity<Object> findFlights(
 			@RequestParam(value="departure") String departure,
@@ -55,51 +64,91 @@ public class InterconnectionsController {
 			@RequestParam(value="arrivalDateTime") String arrivalDateTime) {
 
 		try {
+			LOGGER.info("Petición recibida");
 			FlightSearch flightSearch = new FlightSearch(departure, arrival, departureDateTime, arrivalDateTime);
-			List<String> stopLocations = findInterconnectedLocations(flightSearch);			
+			LOGGER.info("FlightSearch: ");
+			LOGGER.info(flightSearch.toString());
+			
+			List<String> stopLocations = findInterconnectedLocations(flightSearch);
+			LOGGER.info("Conexiones encontradas: {}", stopLocations.size());
+			
 			List<Flight> resultFlights = findFlighs(flightSearch, stopLocations);
+			LOGGER.info("Vuelos encontrados: {}", resultFlights.size());
 
 			return new ResponseEntity<>(resultFlights, HttpStatus.OK);
 
 		} catch (Exception e) {
-			log.warning(e.getMessage());
-			return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
+			LOGGER.warn(e.getMessage(), e);
+			FailResponse response = new FailResponse(e.getClass().getName(), e.getMessage());
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 	
 	private List<String> findInterconnectedLocations(FlightSearch flightSearch) {
 	
 		List<RouteAPI> apiRoutes = routesConsumer.collect();
+		LOGGER.info("Rutas encontradas: {}", apiRoutes.size());
+		
 		RouteSearch routeSearch = searchConverter.convert(flightSearch);
+		LOGGER.info("Route search: {}", routeSearch.toString());
+		
 		return routesService.findStopLocations(apiRoutes, routeSearch);
 	}
 
 	private List<Flight> findFlighs(FlightSearch flightSearch, List<String> stopLocations) throws ValidationException {
 
+		List<Flight> flights = new ArrayList<>();
+		List<Flight> interconnectedFlights = new ArrayList<>();
+
 		// Direct flights
 		List<ScheduleSearch> schedulesSearch = buildSchedulesSearch(flightSearch);
 		List<ScheduleAPI> routeSchedules = schedulesConsumer.findSchedules(schedulesSearch);
+		LOGGER.info("Vuelo directo | Schedules encontrados: {}", routeSchedules.size());
+
 		List<Schedule> schedules = schedulesService.convert(schedulesSearch, routeSchedules);
 		List<Schedule> validSchedules =  schedulesService.filterSchedules(flightSearch, schedules);
-		List<Flight> flights =  schedulesService.buildFlights(flightSearch, validSchedules);
-		
+		LOGGER.info("Vuelo directo | Schedules válidos: {}", validSchedules.size());
+
+		List<Flight> directFlights =  flightsService.buildFlights(flightSearch, validSchedules);
+		LOGGER.info("Vuelos directos: {}", directFlights.size());
+
 		// Interconnected flights
 		for(String stopLocation : stopLocations) {
+			LOGGER.info("Stop localition: {}", stopLocation);
 			FlightSearch leg1 = new FlightSearch(
 									flightSearch.getDeparture(),
 									stopLocation,
 									flightSearch.getDepartureDateTime(),
 									flightSearch.getArrivalDateTime());
-			
+
 			List<ScheduleSearch> leg1SchedulesSearch = buildSchedulesSearch(leg1);
 			List<ScheduleAPI> leg1RouteSchedules = schedulesConsumer.findSchedules(leg1SchedulesSearch);
 			List<Schedule> leg1Schedules = schedulesService.convert(leg1SchedulesSearch, leg1RouteSchedules);
-			
+			List<Schedule> leg1ValidSchedules = schedulesService.filterSchedules(leg1, leg1Schedules);
+			List<Leg> firstPartLegs = flightsService.buildLegs(leg1, leg1ValidSchedules);
+
+			FlightSearch leg2 = new FlightSearch(
+					stopLocation,
+					flightSearch.getArrival(),
+					flightSearch.getDepartureDateTime(),
+					flightSearch.getArrivalDateTime());
+
+            List<ScheduleSearch> leg2SchedulesSearch = buildSchedulesSearch(leg2);
+            List<ScheduleAPI> leg2RouteSchedules = schedulesConsumer.findSchedules(leg2SchedulesSearch);
+            List<Schedule> leg2Schedules = schedulesService.convert(leg2SchedulesSearch, leg2RouteSchedules);
+            List<Schedule> leg2ValidSchedules = schedulesService.filterSchedules(leg2, leg2Schedules);
+            List<Leg> secondPartLegs = flightsService.buildLegs(leg2, leg2ValidSchedules);
+
+            List<Flight> stopLocationFlights = flightsService.buildFlights(firstPartLegs, secondPartLegs);
+
+            interconnectedFlights.addAll(stopLocationFlights);
 		}
-		
+
+		flights.addAll(directFlights);
+		flights.addAll(interconnectedFlights);
+
 		return flights;
 	}
-
 
 	private List<ScheduleSearch> buildSchedulesSearch(FlightSearch flightSearch) {
 
