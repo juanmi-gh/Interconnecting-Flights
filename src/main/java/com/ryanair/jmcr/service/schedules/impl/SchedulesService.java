@@ -3,6 +3,7 @@ package com.ryanair.jmcr.service.schedules.impl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,6 +17,9 @@ import com.ryanair.jmcr.service.dto.Flight;
 import com.ryanair.jmcr.service.dto.Leg;
 import com.ryanair.jmcr.service.schedules.ISchedulesService;
 import com.ryanair.jmcr.service.schedules.dto.ScheduleAPI;
+import com.ryanair.jmcr.service.schedules.dto.ScheduleDayAPI;
+import com.ryanair.jmcr.service.schedules.dto.ScheduleFlightAPI;
+import com.ryanair.jmcr.service.schedules.dto.ScheduleSearch;
 
 @Service
 public class SchedulesService implements ISchedulesService {
@@ -75,9 +79,52 @@ public class SchedulesService implements ISchedulesService {
 					.build();
 	}
 
+
 	@Override
-	public List<Flight> matchConnections(List<ScheduleAPI> firstLegSchedules, List<ScheduleAPI> secondLegSchedules) {
-		return new ArrayList<>();
+	public List<Schedule> convert(List<ScheduleSearch> schedulesSearch, List<ScheduleAPI> schedulesAPI) {
+
+		List<Schedule> result = new ArrayList<>();
+		
+		for(int i = 0; i <  schedulesSearch.size(); i++) {
+			ScheduleSearch scheduleSearch = schedulesSearch.get(i);
+			ScheduleAPI scheduleAPI = schedulesAPI.get(i);
+				
+			Integer year = Integer.valueOf(scheduleSearch.getYear());
+			Integer month = Integer.valueOf(scheduleSearch.getMonth());
+			
+			for(ScheduleDayAPI day: scheduleAPI.getDays()) {
+				
+				LocalDate date = LocalDate. of(year, month, day.getDay());			
+				List<FlightInfo> flights = extractFlightsInfo(day);
+				
+				Schedule schedule = Schedule.builder()
+											.date(date)
+											.flights(flights)
+											.build();
+				
+				result.add(schedule);
+			}	
+		}			
+		
+		return result;
 	}
 
+	private List<FlightInfo> extractFlightsInfo(ScheduleDayAPI day) {
+		
+		List<FlightInfo> flights = new ArrayList<>();
+		
+		for(ScheduleFlightAPI flight : day.getFlights()) {
+			
+			LocalTime departure = LocalTime.parse(flight.getDepartureTime(), DateTimeFormatter.ISO_LOCAL_TIME);
+			LocalTime arrival = LocalTime.parse(flight.getArrivalTime(), DateTimeFormatter.ISO_LOCAL_TIME);
+			
+			FlightInfo item = FlightInfo.builder()
+										.departureTime(departure)
+										.arrivalTime(arrival)
+										.build();
+			flights.add(item);
+		}
+		
+		return flights;
+	}
 }
