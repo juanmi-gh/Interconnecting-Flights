@@ -28,9 +28,9 @@ public class RoutesService implements IRoutesService {
 	public List<String> findStopLocations(List<RouteAPI> apiRoutes, RouteSearch search) {
 
 		List<RouteLocations> validRoutes = apiRoutes.parallelStream()
-			.filter(RoutesService::isValid)
-			.map(converter::convert)
-			.collect(Collectors.toList());
+                                        			.filter(RoutesService::isValid)
+                                        			.map(converter::convert)
+                                        			.collect(Collectors.toList());
 
 		List<Stop> stops = findStops(search, validRoutes);
 		

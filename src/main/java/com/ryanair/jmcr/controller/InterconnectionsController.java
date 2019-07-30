@@ -1,5 +1,9 @@
 package com.ryanair.jmcr.controller;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ryanair.jmcr.controller.dto.FlightSearch;
+import com.ryanair.jmcr.model.FlightInfo;
 import com.ryanair.jmcr.model.Schedule;
 import com.ryanair.jmcr.service.Converter;
 import com.ryanair.jmcr.service.dto.Flight;
@@ -20,7 +25,12 @@ import com.ryanair.jmcr.service.routes.IRoutesService;
 import com.ryanair.jmcr.service.routes.dto.RouteAPI;
 import com.ryanair.jmcr.service.routes.dto.RouteSearch;
 import com.ryanair.jmcr.service.schedules.ISchedulesConsumer;
-import com.ryanair.jmcr.service.schedules.ISchedulesService; 
+import com.ryanair.jmcr.service.schedules.ISchedulesService;
+import com.ryanair.jmcr.service.schedules.dto.ScheduleAPI;
+import com.ryanair.jmcr.service.schedules.dto.ScheduleDayAPI;
+import com.ryanair.jmcr.service.schedules.dto.ScheduleFlightAPI;
+import com.ryanair.jmcr.service.schedules.dto.ScheduleSearch;
+import com.ryanair.jmcr.utils.ValidationException; 
 
 @RestController
 @RequestMapping("seeker")
@@ -70,22 +80,112 @@ public class InterconnectionsController {
 	}
 
 	private List<Flight> findFlighs(FlightSearch flightSearch, List<String> stopLocations) {
+
+		List<ScheduleSearch> schedulesSearch = buildSchedulesSearch(flightSearch);
+		List<ScheduleAPI> routeSchedules = schedulesConsumer.findSchedules(schedulesSearch);
+		List<Schedule> schedules = convert(schedulesSearch, routeSchedules);		
+		return schedulesService.filterSchedules(flightSearch, schedules);		
+	}
 		
-		List<Schedule> routeSchedules = schedulesConsumer.findDirectFlights(flightSearch);
-		List<Flight> validSchedules = schedulesService.filterSchedules(flightSearch, routeSchedules);
-//		List<Flight> flights = schedulesService.convert(flightSearch, validSchedules);
-    	
-		
-// TODO One stop flight
-//		for (String stop : stopLocations) {
-//			List<ScheduleAPI> firstLegSchedules = schedulesConsumer.findFirstLeg(flightSearch, stop);
-//			List<ScheduleAPI> secondLegSchedules = schedulesConsumer.findSecondLeg(flightSearch, stop);
-//			
-//			List<Flight> flights = schedulesService.matchConnections(firstLegSchedules, secondLegSchedules);
-//			resultFlights.addAll(flights);
-//		}
-		
-		return validSchedules;
+/**
+ * 		for(String stopLocation : stopLocations) {
+ *		FlightSearch leg1Search = new FlightSearch(flightSearch.getDeparture(), stopLocation, flightSearch.getDepartureDateTime(), flightSearch.getArrivalDateTime());
+ *		List<Schedule> leg1Schedules = schedulesConsumer.findSchedules(leg1Search);
+ *		
+ *		FlightSearch leg2Search = new FlightSearch(stopLocation, flightSearch.getArrival(), flightSearch.getDepartureDateTime(), flightSearch.getArrivalDateTime());
+ *		List<Schedule> leg2Schedules = schedulesConsumer.findSchedules(leg1Search);
+ *		
+ *		for(Schedule leg1Schedule : leg1Schedules) {
+ *			for(Schedule leg2Schedule : leg1Schedules) {
+ *				if (leg1Schedule match leg2Schedule) {
+ *					validSchedule.add(buildFlight());
+ *					break;
+ *				}
+ *			}
+ *		}		
+ *
+ *		}
+ **/		
+
+	private List<ScheduleSearch> buildSchedulesSearch(FlightSearch flightSearch) {
+
+		List<ScheduleSearch> result = new ArrayList<>();
+
+    	List<LocalDate> dates = calculateYearsAndMonths(flightSearch.getDepartureDateTime(), flightSearch.getArrivalDateTime());
+    	for(LocalDate date : dates) {
+
+    		ScheduleSearch scheduleSearch = ScheduleSearch.builder()
+    			.departure(flightSearch.getDeparture())
+    			.arrival(flightSearch.getArrival())
+    			.year(String.valueOf(date.getYear()))
+    			.month(String.valueOf(date.getMonthValue()))
+    			.build();
+
+    		result.add(scheduleSearch);
+    	}
+
+		return result;
+	}
+
+	private List<LocalDate> calculateYearsAndMonths(LocalDateTime departureDateTime, LocalDateTime arrivalDateTime) {
+
+		List<LocalDate> result = new ArrayList<>();
+
+		LocalDate departureDate = departureDateTime.toLocalDate().withDayOfMonth(1);
+		LocalDate arrivalDate = arrivalDateTime.toLocalDate();
+
+		while(departureDate.isBefore(arrivalDate) || departureDate.equals(arrivalDate)) {
+			result.add(departureDate);
+			departureDate = departureDate.plusMonths(1);
+		}
+
+		return result;
 	}
 	
+	private List<Schedule> convert(List<ScheduleSearch> schedulesSearch, List<ScheduleAPI> schedulesAPI) {
+		
+		List<Schedule> result = new ArrayList<>();
+		
+		for(int i = 0; i <  schedulesSearch.size(); i++) {
+			ScheduleSearch scheduleSearch = schedulesSearch.get(i);
+			ScheduleAPI scheduleAPI = schedulesAPI.get(i);
+				
+			Integer year = Integer.valueOf(scheduleSearch.getYear());
+			Integer month = Integer.valueOf(scheduleSearch.getMonth());
+			
+			for(ScheduleDayAPI day: scheduleAPI.getDays()) {
+				
+				LocalDate date = LocalDate. of(year, month, day.getDay());			
+				List<FlightInfo> flights = extractFlightsInfo(day);
+				
+				Schedule schedule = Schedule.builder()
+											.date(date)
+											.flights(flights)
+											.build();
+				
+				result.add(schedule);
+			}	
+		}			
+		
+		return result;
+	}
+	
+	private List<FlightInfo> extractFlightsInfo(ScheduleDayAPI day) {
+		
+		List<FlightInfo> flights = new ArrayList<>();
+		
+		for(ScheduleFlightAPI flight : day.getFlights()) {
+			
+			LocalTime departure = LocalTime.parse(flight.getDepartureTime(), DateTimeFormatter.ISO_LOCAL_TIME);
+			LocalTime arrival = LocalTime.parse(flight.getArrivalTime(), DateTimeFormatter.ISO_LOCAL_TIME);
+			
+			FlightInfo item = FlightInfo.builder()
+										.departureTime(departure)
+										.arrivalTime(arrival)
+										.build();
+			flights.add(item);
+		}
+		
+		return flights;
+	}
 }

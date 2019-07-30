@@ -26,4 +26,16 @@ public class FlightSearch {
 			throw new ValidationException("Incorrect dates.");
 		}
 	}
+	
+	public FlightSearch(String departure, String arrival, LocalDateTime departureDateTime, LocalDateTime arrivalDateTime) throws ValidationException {
+		
+		this.departure = departure;
+		this.arrival = arrival;
+		this.departureDateTime = departureDateTime;
+		this.arrivalDateTime = arrivalDateTime;
+
+		if (this.departureDateTime.isAfter(this.arrivalDateTime)) {
+			throw new ValidationException("Incorrect dates.");
+		}
+	}
 }
