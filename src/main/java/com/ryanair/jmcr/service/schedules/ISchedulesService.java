@@ -4,13 +4,11 @@ import java.util.List;
 
 import com.ryanair.jmcr.controller.dto.FlightSearch;
 import com.ryanair.jmcr.model.Schedule;
-import com.ryanair.jmcr.service.dto.Flight;
 import com.ryanair.jmcr.service.schedules.dto.ScheduleAPI;
 import com.ryanair.jmcr.service.schedules.dto.ScheduleSearch;
 
 public interface ISchedulesService {
 
-	List<Flight> buildFlights(FlightSearch flightSearch, List<Schedule> schedules);
 	
 	List<Schedule> filterSchedules(FlightSearch flightSearch, List<Schedule> routeSchedules);
 

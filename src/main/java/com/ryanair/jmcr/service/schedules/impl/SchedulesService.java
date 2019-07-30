@@ -1,7 +1,6 @@
 package com.ryanair.jmcr.service.schedules.impl;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -13,8 +12,6 @@ import org.springframework.stereotype.Service;
 import com.ryanair.jmcr.controller.dto.FlightSearch;
 import com.ryanair.jmcr.model.FlightInfo;
 import com.ryanair.jmcr.model.Schedule;
-import com.ryanair.jmcr.service.dto.Flight;
-import com.ryanair.jmcr.service.dto.Leg;
 import com.ryanair.jmcr.service.schedules.ISchedulesService;
 import com.ryanair.jmcr.service.schedules.dto.ScheduleAPI;
 import com.ryanair.jmcr.service.schedules.dto.ScheduleDayAPI;
@@ -24,40 +21,6 @@ import com.ryanair.jmcr.service.schedules.dto.ScheduleSearch;
 @Service
 public class SchedulesService implements ISchedulesService {
 
-	@Override
-	public List<Flight> buildFlights(FlightSearch flightSearch, List<Schedule> schedules) {
-		
-		List<Flight> result = new ArrayList<>();
-		
-		for(Schedule day : schedules) {
-			for(FlightInfo info : day.getFlights()) {
-				
-				Flight flight = buildFlight(flightSearch, day.getDate(), info);
-				result.add(flight);				
-			}
-		}
-		
-		return result;
-	}
-	
-	private Flight buildFlight(FlightSearch flightSearch, LocalDate date, FlightInfo info) {
-		
-		String departure = LocalDateTime.of(date, info.getDepartureTime()).toString();
-		String arrival = LocalDateTime.of(date, info.getArrivalTime()).toString();
-		
-		Leg leg = Leg.builder()
-    				.departureAirport(flightSearch.getDeparture())
-    				.arrivalAirport(flightSearch.getArrival())
-    				.departureDateTime(departure) 
-    				.arrivalDateTime(arrival)
-    				.build();
-		
-		return Flight.builder()
-					.stops(0)
-					.legs(List.of(leg))
-					.build();
-	}
-	
 	@Override
 	public List<Schedule> filterSchedules(FlightSearch flightSearch, List<Schedule> dailySchedules) {
 
