@@ -3,12 +3,15 @@ package com.ryanair.jmcr.service.schedules.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import com.ryanair.jmcr.service.schedules.ISchedulesConsumer;
@@ -18,6 +21,8 @@ import com.ryanair.jmcr.service.schedules.dto.ScheduleSearch;
 @Service
 public class SchedulesConsumer implements ISchedulesConsumer {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger("SCHEDULES-CONSUMER");
+	
 	private static final String DEPARTURE_PLACEHOLDER = "{departure}";
 	private static final String ARRIVAL_PLACEHOLDER = "{arrival}";
 	private static final String YEAR_PLACEHOLDER = "{year}";
@@ -55,13 +60,20 @@ public class SchedulesConsumer implements ISchedulesConsumer {
 
 	private ScheduleAPI sendRequest(String path) {
 
-		ResponseEntity<ScheduleAPI> response = restTemplate.exchange(
-				path,
-				HttpMethod.GET,
-				null,
-				new ParameterizedTypeReference<ScheduleAPI>(){});
+		try {
+    		LOGGER.info("Connecting {}", path);
+    		ResponseEntity<ScheduleAPI> response = restTemplate.exchange(
+    				path,
+    				HttpMethod.GET,
+    				null,
+    				new ParameterizedTypeReference<ScheduleAPI>(){});
+    
+    		return response.getBody();
 
-		return response.getBody();
+		} catch (HttpClientErrorException e) {
+			LOGGER.warn(e.getMessage());
+			return new ScheduleAPI();
+		}
 	}
 
 }
