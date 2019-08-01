@@ -1,0 +1,12 @@
+{"properties": [
+  {
+    "name": "api.routes",
+    "type": "java.lang.String",
+    "description": "API path for consuming all available routes based on the airport's IATA codes."
+  },
+  {
+    "name": "api.schedules",
+    "type": "java.lang.String",
+    "description": "API path for consuming all available flights for a given departure/arrival airport and a year and a month."
+  }
+]}
