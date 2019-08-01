@@ -64,16 +64,10 @@ public class InterconnectionsController {
 			@RequestParam(value="arrivalDateTime") String arrivalDateTime) {
 
 		try {
-			LOGGER.info("Petición recibida");
 			FlightSearch flightSearch = new FlightSearch(departure, arrival, departureDateTime, arrivalDateTime);
-			LOGGER.info("FlightSearch: ");
-			LOGGER.info(flightSearch.toString());
 			
 			List<String> stopLocations = findInterconnectedLocations(flightSearch);
-			LOGGER.info("Conexiones encontradas: {}", stopLocations.size());
-			
 			List<Flight> resultFlights = findFlighs(flightSearch, stopLocations);
-			LOGGER.info("Vuelos encontrados: {}", resultFlights.size());
 
 			return new ResponseEntity<>(resultFlights, HttpStatus.OK);
 
@@ -87,10 +81,8 @@ public class InterconnectionsController {
 	private List<String> findInterconnectedLocations(FlightSearch flightSearch) {
 	
 		List<RouteAPI> apiRoutes = routesConsumer.collect();
-		LOGGER.info("Rutas encontradas: {}", apiRoutes.size());
 		
 		RouteSearch routeSearch = searchConverter.convert(flightSearch);
-		LOGGER.info("Route search: {}", routeSearch.toString());
 		
 		return routesService.findStopLocations(apiRoutes, routeSearch);
 	}
@@ -103,18 +95,14 @@ public class InterconnectionsController {
 		// Direct flights
 		List<ScheduleSearch> schedulesSearch = buildSchedulesSearch(flightSearch);
 		List<ScheduleAPI> routeSchedules = schedulesConsumer.findSchedules(schedulesSearch);
-		LOGGER.info("Vuelo directo | Schedules encontrados: {}", routeSchedules.size());
 
 		List<Schedule> schedules = schedulesService.convert(schedulesSearch, routeSchedules);
 		List<Schedule> validSchedules =  schedulesService.filterSchedules(flightSearch, schedules);
-		LOGGER.info("Vuelo directo | Schedules válidos: {}", validSchedules.size());
 
 		List<Flight> directFlights =  flightsService.buildFlights(flightSearch, validSchedules);
-		LOGGER.info("Vuelos directos: {}", directFlights.size());
 
 		// Interconnected flights
 		for(String stopLocation : stopLocations) {
-			LOGGER.info("Stop localition: {}", stopLocation);
 			FlightSearch leg1 = new FlightSearch(
 									flightSearch.getDeparture(),
 									stopLocation,

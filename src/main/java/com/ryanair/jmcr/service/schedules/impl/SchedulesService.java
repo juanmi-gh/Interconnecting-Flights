@@ -71,27 +71,27 @@ public class SchedulesService implements ISchedulesService {
 	public List<Schedule> convert(List<ScheduleSearch> schedulesSearch, List<ScheduleAPI> schedulesAPI) {
 
 		List<Schedule> result = new ArrayList<>();
-		
+
 		for(int i = 0; i <  schedulesSearch.size(); i++) {
 			ScheduleSearch scheduleSearch = schedulesSearch.get(i);
 			ScheduleAPI scheduleAPI = schedulesAPI.get(i);
-				
+
 			Integer year = Integer.valueOf(scheduleSearch.getYear());
 			Integer month = Integer.valueOf(scheduleSearch.getMonth());
-			
+
 			for(ScheduleDayAPI day: scheduleAPI.getDays()) {
-				
+
 				LocalDate date = LocalDate. of(year, month, day.getDay());			
 				List<FlightInfo> flights = extractFlightsInfo(day);
-				
+
 				Schedule schedule = Schedule.builder()
 											.date(date)
 											.flights(flights)
 											.build();
-				
+
 				result.add(schedule);
-			}	
-		}			
+			}
+		}
 		
 		return result;
 	}

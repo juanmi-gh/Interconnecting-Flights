@@ -18,12 +18,12 @@ import com.ryanair.jmcr.service.routes.dto.RouteSearch;
 
 @Service
 public class RoutesService implements IRoutesService {
-	
+
 	private static final String OPERATOR = "RYANAIR";
-	
+
 	@Autowired
 	Converter<RouteLocations, RouteAPI> converter;
-	
+
 	@Override
 	public List<String> findStopLocations(List<RouteAPI> apiRoutes, RouteSearch search) {
 
@@ -33,11 +33,11 @@ public class RoutesService implements IRoutesService {
                                         			.collect(Collectors.toList());
 
 		List<Stop> stops = findStops(search, validRoutes);
-		
+
 		return filterInterconnectedStops(stops);
 	}
-	
-	private static Boolean isValid(RouteAPI route) {
+
+	protected static Boolean isValid(RouteAPI route) {
 		
 		return OPERATOR.equals(route.getOperator())
 				&& route.getConnectingAirport() == null;
@@ -65,7 +65,7 @@ public class RoutesService implements IRoutesService {
 		
 		return new ArrayList<>(potentialStops.values());
 	}
-	
+
 	private Stop checkPotencialStop(RouteSearch search, RouteLocations route) {
 		
 		if (search.getDeparture().equals(route.getDepartureAirport()) 
@@ -88,7 +88,7 @@ public class RoutesService implements IRoutesService {
 		
 		return Stop.builder().build();
 	}
-	
+
 	private List<String> filterInterconnectedStops(List<Stop> stops) {
 		
 		return stops.parallelStream()

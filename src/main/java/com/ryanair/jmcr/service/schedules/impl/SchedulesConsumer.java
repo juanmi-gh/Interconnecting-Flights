@@ -61,7 +61,6 @@ public class SchedulesConsumer implements ISchedulesConsumer {
 	private ScheduleAPI sendRequest(String path) {
 
 		try {
-    		LOGGER.info("Connecting {}", path);
     		ResponseEntity<ScheduleAPI> response = restTemplate.exchange(
     				path,
     				HttpMethod.GET,
