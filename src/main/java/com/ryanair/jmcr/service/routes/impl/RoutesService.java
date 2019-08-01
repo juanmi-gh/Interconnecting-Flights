@@ -50,36 +50,38 @@ public class RoutesService implements IRoutesService {
 		for (RouteLocations route : routes) {
 		
 			Stop potentialStop = checkPotencialStop(search, route);
-			if (potentialStop.isEmpty()) {
-				continue;
-			}
-			
-			Stop previousDetectedStop = potentialStops.get(potentialStop.getAirport());
-			if (previousDetectedStop != null) {
-				previousDetectedStop.join(potentialStop);
-			
-			} else {
-				potentialStops.put(potentialStop.getAirport(), potentialStop);
-			}
+			registerStop(potentialStop, potentialStops);
 		}
 		
 		return new ArrayList<>(potentialStops.values());
 	}
 
+	private void registerStop(Stop potentialStop, Map<String, Stop> potentialStops) {
+
+		if (potentialStop.isEmpty()) {
+			return;
+		}
+		
+		Stop previousDetectedStop = potentialStops.get(potentialStop.getAirport());
+
+		if (previousDetectedStop == null) {
+			potentialStops.put(potentialStop.getAirport(), potentialStop);
+		
+		} else {
+			previousDetectedStop.join(potentialStop);
+		}
+	}
+	
 	private Stop checkPotencialStop(RouteSearch search, RouteLocations route) {
 		
-		if (search.getDeparture().equals(route.getDepartureAirport()) 
-			&& !search.getArrival().equals(route.getArrivalAirport())) {
-			
+		if (isArrivalStop(search, route)) {
 			return Stop.builder()
 					.airport(route.getArrivalAirport())
 					.isArrival(Boolean.TRUE)
 					.build();
 		}
 		
-		if (!search.getDeparture().equals(route.getDepartureAirport()) 
-			&& search.getArrival().equals(route.getArrivalAirport())) {
-			
+		if (isDepartureStop(search, route)) {
 			return Stop.builder()
 					.airport(route.getDepartureAirport())
 					.isDeparture(Boolean.TRUE)
@@ -87,6 +89,16 @@ public class RoutesService implements IRoutesService {
 		}
 		
 		return Stop.builder().build();
+	}
+	
+	private Boolean isArrivalStop(RouteSearch search, RouteLocations route) {
+		return search.getDeparture().equals(route.getDepartureAirport()) 
+			&& !search.getArrival().equals(route.getArrivalAirport());
+	}
+	
+	private Boolean isDepartureStop(RouteSearch search, RouteLocations route) {
+		return !search.getDeparture().equals(route.getDepartureAirport()) 
+			&& search.getArrival().equals(route.getArrivalAirport());
 	}
 
 	private List<String> filterInterconnectedStops(List<Stop> stops) {

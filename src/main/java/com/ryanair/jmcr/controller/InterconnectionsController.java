@@ -81,7 +81,6 @@ public class InterconnectionsController {
 	private List<String> findInterconnectedLocations(FlightSearch flightSearch) {
 	
 		List<RouteAPI> apiRoutes = routesConsumer.collect();
-		
 		RouteSearch routeSearch = searchConverter.convert(flightSearch);
 		
 		return routesService.findStopLocations(apiRoutes, routeSearch);
@@ -90,18 +89,34 @@ public class InterconnectionsController {
 	private List<Flight> findFlighs(FlightSearch flightSearch, List<String> stopLocations) throws ValidationException {
 
 		List<Flight> flights = new ArrayList<>();
-		List<Flight> interconnectedFlights = new ArrayList<>();
 
 		// Direct flights
-		List<ScheduleSearch> schedulesSearch = buildSchedulesSearch(flightSearch);
-		List<ScheduleAPI> routeSchedules = schedulesConsumer.findSchedules(schedulesSearch);
-
-		List<Schedule> schedules = schedulesService.convert(schedulesSearch, routeSchedules);
-		List<Schedule> validSchedules =  schedulesService.filterSchedules(flightSearch, schedules);
-
+		List<Schedule> validSchedules = findSchedules(flightSearch);
 		List<Flight> directFlights =  flightsService.buildFlights(flightSearch, validSchedules);
+		LOGGER.info("Found {} direct flighs.", directFlights.size());
 
 		// Interconnected flights
+		List<Flight> interconnectedFlights = findInterconnectedFlights(flightSearch, stopLocations);
+		LOGGER.info("Found {} interconnected flighs.", interconnectedFlights.size());
+		
+		flights.addAll(directFlights);
+		flights.addAll(interconnectedFlights);
+
+		return flights;
+	}
+	
+	private List<Schedule> findSchedules(FlightSearch flightSearch) {
+		
+		List<ScheduleSearch> schedulesSearch = buildSchedulesSearch(flightSearch);
+		List<ScheduleAPI> routeSchedules = schedulesConsumer.findSchedules(schedulesSearch);
+		List<Schedule> schedules = schedulesService.convert(schedulesSearch, routeSchedules);
+		return schedulesService.filterSchedules(flightSearch, schedules);
+	}
+
+	private List<Flight> findInterconnectedFlights(FlightSearch flightSearch, List<String> stopLocations) throws ValidationException {
+
+		List<Flight> interconnectedFlights = new ArrayList<>();
+		
 		for(String stopLocation : stopLocations) {
 			FlightSearch leg1 = new FlightSearch(
 									flightSearch.getDeparture(),
@@ -109,35 +124,26 @@ public class InterconnectionsController {
 									flightSearch.getDepartureDateTime(),
 									flightSearch.getArrivalDateTime());
 
-			List<ScheduleSearch> leg1SchedulesSearch = buildSchedulesSearch(leg1);
-			List<ScheduleAPI> leg1RouteSchedules = schedulesConsumer.findSchedules(leg1SchedulesSearch);
-			List<Schedule> leg1Schedules = schedulesService.convert(leg1SchedulesSearch, leg1RouteSchedules);
-			List<Schedule> leg1ValidSchedules = schedulesService.filterSchedules(leg1, leg1Schedules);
+			List<Schedule> leg1ValidSchedules = findSchedules(leg1);
 			List<Leg> firstPartLegs = flightsService.buildLegs(leg1, leg1ValidSchedules);
 
 			FlightSearch leg2 = new FlightSearch(
-					stopLocation,
-					flightSearch.getArrival(),
-					flightSearch.getDepartureDateTime(),
-					flightSearch.getArrivalDateTime());
-
-            List<ScheduleSearch> leg2SchedulesSearch = buildSchedulesSearch(leg2);
-            List<ScheduleAPI> leg2RouteSchedules = schedulesConsumer.findSchedules(leg2SchedulesSearch);
-            List<Schedule> leg2Schedules = schedulesService.convert(leg2SchedulesSearch, leg2RouteSchedules);
-            List<Schedule> leg2ValidSchedules = schedulesService.filterSchedules(leg2, leg2Schedules);
+                					stopLocation,
+                					flightSearch.getArrival(),
+                					flightSearch.getDepartureDateTime(),
+                					flightSearch.getArrivalDateTime());
+            
+            List<Schedule> leg2ValidSchedules = findSchedules(leg2);
             List<Leg> secondPartLegs = flightsService.buildLegs(leg2, leg2ValidSchedules);
 
             List<Flight> stopLocationFlights = flightsService.buildFlights(firstPartLegs, secondPartLegs);
 
             interconnectedFlights.addAll(stopLocationFlights);
 		}
-
-		flights.addAll(directFlights);
-		flights.addAll(interconnectedFlights);
-
-		return flights;
+		
+		return interconnectedFlights;
 	}
-
+	
 	private List<ScheduleSearch> buildSchedulesSearch(FlightSearch flightSearch) {
 
 		List<ScheduleSearch> result = new ArrayList<>();

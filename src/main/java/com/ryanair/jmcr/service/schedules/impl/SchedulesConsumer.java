@@ -70,7 +70,7 @@ public class SchedulesConsumer implements ISchedulesConsumer {
     		return response.getBody();
 
 		} catch (HttpClientErrorException e) {
-			LOGGER.warn(e.getMessage());
+			LOGGER.warn("{} - {}", e.getMessage(), path);
 			return new ScheduleAPI();
 		}
 	}
